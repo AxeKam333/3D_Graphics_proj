@@ -58,6 +58,14 @@ int vertexCount = myTeapotVertexCount;
 GLuint tex0;
 GLuint tex1;
 
+// --- Obsługa kamery
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -3.5f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+glm::vec3 cameraMov_x = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraMov_y = glm::vec3(0.0f, 0.0f, 0.0f);
+
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
 	fputs(description, stderr);
@@ -65,18 +73,42 @@ void error_callback(int error, const char* description) {
 
 
 void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
+
+	const float cameraSpeed = 0.05f;
+
     if (action==GLFW_PRESS) {
         if (key==GLFW_KEY_LEFT) speed_x=-PI/2;
         if (key==GLFW_KEY_RIGHT) speed_x=PI/2;
         if (key==GLFW_KEY_UP) speed_y=PI/2;
         if (key==GLFW_KEY_DOWN) speed_y=-PI/2;
+
+		if (key == GLFW_KEY_W) cameraMov_x = cameraSpeed * cameraFront;
+		if (key == GLFW_KEY_S) cameraMov_x = -cameraSpeed * cameraFront;
+		if (key == GLFW_KEY_A) cameraMov_y = - glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		if (key == GLFW_KEY_D) cameraMov_y = glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     }
     if (action==GLFW_RELEASE) {
         if (key==GLFW_KEY_LEFT) speed_x=0;
         if (key==GLFW_KEY_RIGHT) speed_x=0;
         if (key==GLFW_KEY_UP) speed_y=0;
         if (key==GLFW_KEY_DOWN) speed_y=0;
+
+		if (key == GLFW_KEY_W || key == GLFW_KEY_S) {
+			cameraMov_x = glm::vec3(0.0f, 0.0f, 0.0f);
+		}
+		if (key == GLFW_KEY_A || key == GLFW_KEY_D){
+			cameraMov_y = glm::vec3(0.0f, 0.0f, 0.0f);
+		}
     }
+	 // adjust accordingly
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
 void windowResizeCallback(GLFWwindow* window,int width,int height) {
@@ -141,10 +173,7 @@ void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
 	//************Tutaj umieszczaj kod rysujący obraz******************l
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glm::mat4 V=glm::lookAt(
-         glm::vec3(0, 0, -2.5),
-         glm::vec3(0,0,0),
-         glm::vec3(0.0f,1.0f,0.0f)); //Wylicz macierz widoku
+	glm::mat4 V=glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); //Wylicz macierz widoku
 
     glm::mat4 P=glm::perspective(50.0f*PI/180.0f, aspectRatio, 0.01f, 50.0f); //Wylicz macierz rzutowania
 
@@ -228,6 +257,7 @@ int main(void)
 	{
         angle_x+=speed_x*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
         angle_y+=speed_y*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
+		cameraPos += cameraMov_x + cameraMov_y; // Przesuwanie prawo/lewo oraz przód/tył przy wciskaniu WSAD
         glfwSetTime(0); //Zeruj timer
 		drawScene(window,angle_x,angle_y); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
