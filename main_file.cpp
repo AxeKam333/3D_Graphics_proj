@@ -59,12 +59,19 @@ GLuint tex0;
 GLuint tex1;
 
 // --- Obsługa kamery
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -3.5f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.5f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 glm::vec3 cameraMov_x = glm::vec3(0.0f, 0.0f, 0.0f);
-glm::vec3 cameraMov_y = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraMov_y = glm::vec3(0.0f, 0.0f, 0.0f); // Wsm bardziej, camMov_z, ale zostawmy
+
+float lastX = 400, lastY = 300;
+float yaw = -90.0f, pitch = 0.0f;
+bool firstMouse = true;
+
+// --- Po nacisnieciu X nastepuje zamkniecie okna
+bool XButtonPressed = false;
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -86,6 +93,8 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
 		if (key == GLFW_KEY_S) cameraMov_x = -cameraSpeed * cameraFront;
 		if (key == GLFW_KEY_A) cameraMov_y = - glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		if (key == GLFW_KEY_D) cameraMov_y = glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+		if (key == GLFW_KEY_X) XButtonPressed = true;
     }
     if (action==GLFW_RELEASE) {
         if (key==GLFW_KEY_LEFT) speed_x=0;
@@ -100,15 +109,40 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
 			cameraMov_y = glm::vec3(0.0f, 0.0f, 0.0f);
 		}
     }
-	 // adjust accordingly
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPos += cameraSpeed * cameraFront;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * cameraFront;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 direction;
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(direction);
 }
 
 void windowResizeCallback(GLFWwindow* window,int width,int height) {
@@ -249,11 +283,14 @@ int main(void)
 
 	initOpenGLProgram(window); //Operacje inicjujące
 
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouse_callback);
+
 	//Główna pętla
 	float angle_x=0; //Aktualny kąt obrotu obiektu
 	float angle_y=0; //Aktualny kąt obrotu obiektu
 	glfwSetTime(0); //Zeruj timer
-	while (!glfwWindowShouldClose(window)) //Tak długo jak okno nie powinno zostać zamknięte
+	while (!glfwWindowShouldClose(window) and !XButtonPressed) //Tak długo jak okno nie powinno zostać zamknięte
 	{
         angle_x+=speed_x*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
         angle_y+=speed_y*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
