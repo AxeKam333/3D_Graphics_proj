@@ -9,24 +9,36 @@ in vec2 iTexCoord0;
 in vec2 iTexCoord1;
 in vec4 ic; 
 in vec4 n;
-in vec4 l;
+in vec4 l1;
+in vec4 l2;
 in vec4 v;
 
 void main(void) {
 
 	//Znormalizowane interpolowane wektory
-	vec4 ml = normalize(l);
+	vec4 ml1 = normalize(l1);
+	vec4 ml2 = normalize(l2);
 	vec4 mn = normalize(n);
 	vec4 mv = normalize(v);
 	//Wektor odbity
-	vec4 mr = reflect(-ml, mn);
+	vec4 mr1 = reflect(-ml1, mn);
+	vec4 mr2 = reflect(-ml2, mn);
 
 	//Parametry powierzchni
 	vec4 kd = mix(texture(textureMap0, iTexCoord0), texture(textureMap1, iTexCoord1),0.3);
 	vec4 ks = vec4(1, 1, 1, 1);
 
 	//Obliczenie modelu oświetlenia
-	float nl = clamp(dot(mn, ml), 0, 1);
-	float rv = pow(clamp(dot(mr, mv), 0, 1), 50);
-	pixelColor= vec4(kd.rgb * nl, kd.a) + vec4(ks.rgb*rv, 0);
+    float nl1 = clamp(dot(mn, ml1), 0, 1);
+    float rv1 = pow(clamp(dot(mr1, mv), 0, 1), 50);
+
+    float nl2 = clamp(dot(mn, ml2), 0, 1);
+    float rv2 = pow(clamp(dot(mr2, mv), 0, 1), 50);
+
+    //Kumulacja oświetlenia dla obu źródeł
+    vec4 lightColor1 = vec4(kd.rgb * nl1, kd.a) + vec4(ks.rgb * rv1, 0);
+    vec4 lightColor2 = vec4(kd.rgb * nl2, kd.a) + vec4(ks.rgb * rv2, 0);
+
+    //Finalny kolor piksela
+    pixelColor = lightColor1 + lightColor2;
 }
