@@ -295,6 +295,7 @@ int main(void)
         angle_x+=speed_x*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
         angle_y+=speed_y*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
 		cameraPos += cameraMov_x + cameraMov_y; // Przesuwanie prawo/lewo oraz przód/tył przy wciskaniu WSAD
+		cameraPos.y = 0.0f;
         glfwSetTime(0); //Zeruj timer
 		drawScene(window,angle_x,angle_y); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
