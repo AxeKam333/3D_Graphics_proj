@@ -49,14 +49,16 @@ int vertexCount = myCubeVertexCount;
 
 
 //Odkomentuj, żeby rysować czajnik
-// float* vertices = myTeapotVertices;
-// float* normals = myTeapotVertexNormals;
-// float* texCoords = myTeapotTexCoords;
-// float* colors = myTeapotColors;
-// int vertexCount = myTeapotVertexCount;
+float* vertices2 = myTeapotVertices;
+float* normals2 = myTeapotVertexNormals;
+float* texCoords2 = myTeapotTexCoords;
+float* colors2 = myTeapotColors;
+int vertexCount2 = myTeapotVertexCount;
 
 GLuint tex0;
 GLuint tex1;
+GLuint tex2;
+GLuint tex3;
 
 // --- Obsługa kamery
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.5f);
@@ -185,8 +187,10 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 	sp=new ShaderProgram("v_simplest.glsl",NULL,"f_simplest.glsl");
 
-	tex0 = readTexture("wood1.png");
+	tex0 = readTexture("metal.png");
 	tex1 = readTexture("sky.png");
+	tex2 = readTexture("wood1.png");
+	tex3 = readTexture("sky.png");
 }
 
 
@@ -196,60 +200,93 @@ void freeOpenGLProgram(GLFWwindow* window) {
 
     delete sp;
 
-	glDeleteTextures(1, &tex0);
+	glDeleteTextures(3, &tex0);
 }
 
+void setupVertexAttribs(float * v, float * c, float * n, float * t) {
+    glEnableVertexAttribArray(sp->a("vertex"));
+    glVertexAttribPointer(sp->a("vertex"), 4, GL_FLOAT, false, 0, v);
 
+    glEnableVertexAttribArray(sp->a("color"));
+    glVertexAttribPointer(sp->a("color"), 4, GL_FLOAT, false, 0, c);
 
+    glEnableVertexAttribArray(sp->a("normal"));
+    glVertexAttribPointer(sp->a("normal"), 4, GL_FLOAT, false, 0, n);
+
+    glEnableVertexAttribArray(sp->a("texCoord0"));
+    glVertexAttribPointer(sp->a("texCoord0"), 2, GL_FLOAT, false, 0, t);
+}
+
+void setupTextures(GLuint t0, GLuint t1) {
+    glUniform1i(sp->u("textureMap0"), 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, t0);
+
+    glUniform1i(sp->u("textureMap1"), 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, t1);
+}
+
+void disableVertexAttribs() {
+    glDisableVertexAttribArray(sp->a("vertex"));
+    glDisableVertexAttribArray(sp->a("color"));
+    glDisableVertexAttribArray(sp->a("normal"));
+    glDisableVertexAttribArray(sp->a("texCoord0"));
+}
 
 //Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window,float angle_x,float angle_y) {
-	//************Tutaj umieszczaj kod rysujący obraz******************l
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glm::mat4 V=glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); //Wylicz macierz widoku
+    glm::mat4 V = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    glm::mat4 P = glm::perspective(50.0f * PI / 180.0f, aspectRatio, 0.01f, 50.0f);
 
-    glm::mat4 P=glm::perspective(50.0f*PI/180.0f, aspectRatio, 0.01f, 50.0f); //Wylicz macierz rzutowania
+    sp->use();
+    glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
+    glUniformMatrix4fv(sp->u("V"), 1, false, glm::value_ptr(V));
 
-    glm::mat4 M=glm::mat4(1.0f);
-	M=glm::rotate(M,angle_y,glm::vec3(1.0f,0.0f,0.0f)); //Wylicz macierz modelu
-	M=glm::rotate(M,angle_x,glm::vec3(0.0f,1.0f,0.0f)); //Wylicz macierz modelu
-
-    sp->use();//Aktywacja programu cieniującego
-    //Przeslij parametry programu cieniującego do karty graficznej
-    glUniformMatrix4fv(sp->u("P"),1,false,glm::value_ptr(P));
-    glUniformMatrix4fv(sp->u("V"),1,false,glm::value_ptr(V));
-    glUniformMatrix4fv(sp->u("M"),1,false,glm::value_ptr(M));
-
-    glEnableVertexAttribArray(sp->a("vertex"));  //Włącz przesyłanie danych do atrybutu vertex
-    glVertexAttribPointer(sp->a("vertex"),4,GL_FLOAT,false,0,vertices); //Wskaż tablicę z danymi dla atrybutu vertex
-
-	glEnableVertexAttribArray(sp->a("color"));  //Włącz przesyłanie danych do atrybutu color
-	glVertexAttribPointer(sp->a("color"), 4, GL_FLOAT, false, 0, colors); //Wskaż tablicę z danymi dla atrybutu color
-
-	glEnableVertexAttribArray(sp->a("normal"));  //Włącz przesyłanie danych do atrybutu normal
-	glVertexAttribPointer(sp->a("normal"), 4, GL_FLOAT, false, 0, normals); //Wskaż tablicę z danymi dla atrybutu normal
-
-	glEnableVertexAttribArray(sp->a("texCoord0"));  //Włącz przesyłanie danych do atrybutu texCoord0
-	glVertexAttribPointer(sp->a("texCoord0"), 2, GL_FLOAT, false, 0, texCoords); //Wskaż tablicę z danymi dla atrybutu texCoord0
+    // Macierz główna
+    glm::mat4 M = glm::mat4(1.0f);
 
 
-	glUniform1i(sp->u("textureMap0"), 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, tex0);
 
-	glUniform1i(sp->u("textureMap1"), 1);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, tex1);
+	// Macierz modelu dla itema
+    glm::mat4 MItem = M;
+    MItem = glm::translate(MItem, glm::vec3(-2.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
+    MItem = glm::rotate(MItem, angle_y, glm::vec3(1.0f, 0.0f, 0.0f));
+    MItem = glm::rotate(MItem, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
+    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
 
-    glDrawArrays(GL_TRIANGLES,0,vertexCount); //Narysuj obiekt
+    // Przesyłanie danych i rysowanie itema
 
-    glDisableVertexAttribArray(sp->a("vertex"));  //Wyłącz przesyłanie danych do atrybutu vertex
-	glDisableVertexAttribArray(sp->a("color"));  //Wyłącz przesyłanie danych do atrybutu color
-	glDisableVertexAttribArray(sp->a("normal"));  //Wyłącz przesyłanie danych do atrybutu normal
-	glDisableVertexAttribArray(sp->a("texCoord0"));  //Wyłącz przesyłanie danych do atrybutu texCoord0
+	setupVertexAttribs(vertices2, colors2, normals2, texCoords2);
+	setupTextures(tex0, tex1);
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount2);
 
-    glfwSwapBuffers(window); //Przerzuć tylny bufor na przedni
+    // Macierz modelu dla podlogi
+    glm::mat4 MFloor = M;
+    MFloor=glm::translate(MFloor, glm::vec3(0, -2, 0));
+	MFloor=glm::scale(MFloor, glm::vec3(10, 0.5, 10));
+
+    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MFloor));
+
+    // Przesyłanie danych i rysowanie podlogi
+	setupVertexAttribs(vertices, colors, normals, texCoords);
+	setupTextures(tex2, tex3);
+	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+	
+	glm::mat4 MCeiling = M;
+    MCeiling=glm::translate(MCeiling, glm::vec3(0, 6, 0));
+	MCeiling=glm::scale(MCeiling, glm::vec3(10, 0.5, 10));
+
+    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MCeiling));
+
+    // Przesyłanie danych i rysowanie podlogi
+	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+
+    disableVertexAttribs();
+
+    glfwSwapBuffers(window);
 }
 
 
