@@ -32,6 +32,8 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "shaderprogram.h"
 #include "myCube.h"
 #include "myTeapot.h"
+#include "libraries/tiny_obj_loader.h"
+#include <vector>
 
 float speed_x=0;
 float speed_y=0;
@@ -41,12 +43,11 @@ ShaderProgram *sp;
 
 
 //Odkomentuj, żeby rysować kostkę
-float* vertices = myCubeVertices;
-float* normals = myCubeNormals;
-float* texCoords = myCubeTexCoords;
-float* colors = myCubeColors;
-int vertexCount = myCubeVertexCount;
-
+float* vertices3 = myCubeVertices;
+float* normals3 = myCubeNormals;
+float* texCoords3 = myCubeTexCoords;
+float* colors3 = myCubeColors;
+int vertexCount3 = myCubeVertexCount;
 
 //Odkomentuj, żeby rysować czajnik
 float* vertices2 = myTeapotVertices;
@@ -54,6 +55,12 @@ float* normals2 = myTeapotVertexNormals;
 float* texCoords2 = myTeapotTexCoords;
 float* colors2 = myTeapotColors;
 int vertexCount2 = myTeapotVertexCount;
+
+std::vector<float> vertices;
+std::vector<float> normals;
+std::vector<float> texcoords;
+int vertexCount;
+GLuint texture;
 
 GLuint tex0;
 GLuint tex1;
@@ -74,6 +81,75 @@ bool firstMouse = true;
 
 // --- Po nacisnieciu X nastepuje zamkniecie okna
 bool XButtonPressed = false;
+
+bool loadOBJ(const char* path) {
+    std::string inputfile = path;
+    tinyobj::ObjReaderConfig reader_config;
+    reader_config.mtl_search_path = "./"; // Path to material files
+
+    tinyobj::ObjReader reader;
+
+	if (!reader.ParseFromFile(inputfile, reader_config)) {
+        if (!reader.Error().empty()) {
+            printf("TinyObjReader: error");
+        }
+        return false;
+    }
+
+    if (!reader.Warning().empty()) {
+		printf("TinyObjReader: warning");
+    }
+
+    auto& attrib = reader.GetAttrib();
+    auto& shapes = reader.GetShapes();
+    auto& materials = reader.GetMaterials();
+
+    // Loop over shapes
+    for (size_t s = 0; s < shapes.size(); s++) {
+        // Loop over faces(polygon)
+        size_t index_offset = 0;
+        for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
+            size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
+
+            // Loop over vertices in the face.
+            for (size_t v = 0; v < fv; v++) {
+                // access to vertex
+                tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+                tinyobj::real_t vx = attrib.vertices[3 * size_t(idx.vertex_index) + 0];
+                tinyobj::real_t vy = attrib.vertices[3 * size_t(idx.vertex_index) + 1];
+                tinyobj::real_t vz = attrib.vertices[3 * size_t(idx.vertex_index) + 2];
+                vertices.push_back(vx);
+                vertices.push_back(vy);
+                vertices.push_back(vz);
+
+                // Check if `normal_index` is zero or positive. negative = no normal data
+                if (idx.normal_index >= 0) {
+                    tinyobj::real_t nx = attrib.normals[3 * size_t(idx.normal_index) + 0];
+                    tinyobj::real_t ny = attrib.normals[3 * size_t(idx.normal_index) + 1];
+                    tinyobj::real_t nz = attrib.normals[3 * size_t(idx.normal_index) + 2];
+                    normals.push_back(nx);
+                    normals.push_back(ny);
+                    normals.push_back(nz);
+                }
+
+                // Check if `texcoord_index` is zero or positive. negative = no texcoord data
+                if (idx.texcoord_index >= 0) {
+                    tinyobj::real_t tx = attrib.texcoords[2 * size_t(idx.texcoord_index) + 0];
+                    tinyobj::real_t ty = attrib.texcoords[2 * size_t(idx.texcoord_index) + 1];
+                    texcoords.push_back(tx);
+                    texcoords.push_back(ty);
+                }
+            }
+            index_offset += fv;
+
+            // per-face material (not used in this example)
+            // shapes[s].mesh.material_ids[f];
+        }
+    }
+
+    vertexCount = vertices.size() / 3;
+    return true;
+}
 
 //Procedura obsługi błędów
 void error_callback(int error, const char* description) {
@@ -180,6 +256,12 @@ GLuint readTexture(const char* filename) {
 //Procedura inicjująca
 void initOpenGLProgram(GLFWwindow* window) {
 	//************Tutaj umieszczaj kod, który należy wykonać raz, na początku programu************
+
+	 if (!loadOBJ("models/bottles.obj")) {
+		printf("Nie udało się wczytać modelu\n");
+        exit(EXIT_FAILURE);
+    }
+
 	glClearColor(0,0,0,1);
 	glEnable(GL_DEPTH_TEST);
 	glfwSetWindowSizeCallback(window,windowResizeCallback);
@@ -248,8 +330,6 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
     // Macierz główna
     glm::mat4 M = glm::mat4(1.0f);
 
-
-
 	// Macierz modelu dla itema
     glm::mat4 MItem = M;
     MItem = glm::translate(MItem, glm::vec3(-2.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
@@ -259,7 +339,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
     // Przesyłanie danych i rysowanie itema
 
-	setupVertexAttribs(vertices2, colors2, normals2, texCoords2);
+	setupVertexAttribs(vertices.data(), colors2, normals.data(), texcoords.data());
 	setupTextures(tex0, tex1);
     glDrawArrays(GL_TRIANGLES, 0, vertexCount2);
 
@@ -271,9 +351,9 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
     glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MFloor));
 
     // Przesyłanie danych i rysowanie podlogi
-	setupVertexAttribs(vertices, colors, normals, texCoords);
+	setupVertexAttribs(vertices3, colors3, normals3, texCoords3);
 	setupTextures(tex2, tex3);
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+	glDrawArrays(GL_TRIANGLES, 0, vertexCount3);
 	
 	glm::mat4 MCeiling = M;
     MCeiling=glm::translate(MCeiling, glm::vec3(0, 6, 0));
@@ -281,8 +361,8 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
 
     glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MCeiling));
 
-    // Przesyłanie danych i rysowanie podlogi
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+    // Przesyłanie danych i rysowanie sufitu
+	glDrawArrays(GL_TRIANGLES, 0, vertexCount3);
 
     disableVertexAttribs();
 
