@@ -1,6 +1,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_SWIZZLE
 
+#include <random>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -19,6 +20,8 @@
 float speed_x=0;
 float speed_y=0;
 float aspectRatio=1;
+int drinking = 0;
+static uint32_t drinkCount = 0;
 
 ShaderProgram *sp;
 
@@ -40,7 +43,7 @@ int vertexCount2 = myTeapotVertexCount;
 
 static Object OBottle("models\\untitled.obj");
 static Object OFloor("floor.obj");
-static Object OTable("models\\stol.obj");
+//static Object OTable("models\\stol.obj");
 
 GLuint tex0;
 GLuint tex1;
@@ -84,6 +87,27 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
 		if (key == GLFW_KEY_D) cameraMov_y = glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
 		if (key == GLFW_KEY_X) XButtonPressed = true;
+		if (key == GLFW_KEY_1 && drinking == 0 ) {
+			drinking = 1;
+		}
+		if (key == GLFW_KEY_2 && drinking == 0) {
+			drinking = 2;
+		}
+		if (key == GLFW_KEY_3 && drinking == 0) {
+			drinking = 3;
+		}
+		if (key == GLFW_KEY_4 && drinking == 0) {
+			drinking = 4;
+		}
+		if (key == GLFW_KEY_5 && drinking == 0) {
+			drinking = 5;
+		}
+		if (key == GLFW_KEY_6 && drinking == 0) {
+			drinking = 6;
+		}
+		if (key == GLFW_KEY_7 && drinking == 0) {
+			drinking = 7;
+		}
     }
     if (action==GLFW_RELEASE) {
         if (key==GLFW_KEY_LEFT) speed_x=0;
@@ -97,6 +121,7 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
 		if (key == GLFW_KEY_A || key == GLFW_KEY_D){
 			cameraMov_y = glm::vec3(0.0f, 0.0f, 0.0f);
 		}
+		
     }
 
 }
@@ -175,10 +200,10 @@ void initOpenGLProgram(GLFWwindow* window) {
 
 	// bool res = loadOBJ("C:\\Users\\olekk\\OneDrive\\Pulpit\\programming studies\\g&v\\Projekt\\gkiw_st_11a_win\\models\\untitled.obj", vertices, uvs, normals);
 
-	tex0 = readTexture("metal.png");
+	tex0 = readTexture("glass.png");
 	tex1 = readTexture("sky.png");
 	tex2 = readTexture("wood1.png");
-	tex3 = readTexture("sky.png");
+	tex3 = readTexture("marmur.png");
 }
 
 
@@ -223,45 +248,144 @@ void disableVertexAttribs() {
     glDisableVertexAttribArray(sp->a("texCoord0"));
 }
 
-//Procedura rysująca zawartość sceny
-void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::mat4 V = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-    glm::mat4 P = glm::perspective(50.0f * PI / 180.0f, aspectRatio, 0.01f, 50.0f);
+glm::mat4 drink(glm::mat4 M,float angle_x, float angle_y,int drink_ID, bool show[]) {
+	if (drinking != drink_ID) {
+		
+		M = glm::rotate(M, angle_y, glm::vec3(1.0f, 0.0f, 0.0f));
+		M = glm::rotate(M, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
+		
+	}
 
-    sp->use();
-    glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
-    glUniformMatrix4fv(sp->u("V"), 1, false, glm::value_ptr(V));
 
-    // Macierz główna
-    glm::mat4 M = glm::mat4(1.0f);
-
-	// Macierz modelu dla itema
-    glm::mat4 MItem = M;
-    MItem = glm::translate(MItem, glm::vec3(-2.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
-    MItem = glm::rotate(MItem, angle_y, glm::vec3(1.0f, 0.0f, 0.0f));
-    MItem = glm::rotate(MItem, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
-    MItem = glm::scale(MItem, glm::vec3(0.1f, 0.1f, 0.3f));
-    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
-
-    // Przesyłanie danych i rysowanie itema
-
-	OBottle.draw(sp);
-
-	glm::mat4 MTable = M;
-	MTable = glm::translate(MTable, glm::vec3(0.0f, 0.0f, 0.0f));
-	MTable = glm::scale(MTable, glm::vec3(0.3f, 0.3f, 0.3f));
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MTable));
-	OTable.draw(sp);
+	// Przesyłanie danych i rysowanie itema
+	else {
+		static float drink_time[10] = {0.0f,0.0f ,0.0f,0.0f , 0.0f,0.0f ,0.0f,0.0f , 0.0f,0.0f };
+		const float max_drink_time = 2.5;
+		drink_time[drink_ID] += 0.03;
+		
+		if (drink_time[drink_ID] > 3.4) {
+			show[drink_ID] = false;
+			drinkCount++;
+			drinking = 0;
+		}
+		float drink_angle = fmin(drink_time[drink_ID], max_drink_time);
+		//printf("%d\n", drink_angle);
+		M = glm::translate(M, glm::vec3(0.0f, drink_angle / 5, 0.0f));
+		M = glm::rotate(M, drink_angle, glm::vec3(1.0f, 0.0f, 0.0f));
+	}
+	return M;
+}
+glm::vec3 generateRandomOffset(float amplitude) {
+	float offsetX = ((rand() % 2000) / 1000.0f - 1.0f) * amplitude;
+	float offsetY = ((rand() % 2000) / 1000.0f - 1.0f) * amplitude;
+	float offsetZ = ((rand() % 2000) / 1000.0f - 1.0f) * amplitude;
 
 	
-	glm::mat4 MItem2 = M;
-    MItem2 = glm::translate(MItem2, glm::vec3(-1.0f, 0.0f, 0.0f));
-    MItem2 = glm::scale(MItem2, glm::vec3(0.1f, 0.1f, 0.1f));
-    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem2));
 
+	return glm::vec3(offsetX, 0, offsetZ);
+}
+
+//Procedura rysująca zawartość sceny
+void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	static bool show[10] = { true, true, true, true, true, true, true, true, true, true };
+
+	glm::vec3 randomOffset = generateRandomOffset(drinkCount*0.003*drinkCount);
+	 cameraPos = cameraPos + randomOffset;
+	glm::mat4 V = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+	glm::mat4 P = glm::perspective(50.0f * PI / 180.0f, aspectRatio, 0.01f, 50.0f);
+
+	sp->use();
+	glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
+	glUniformMatrix4fv(sp->u("V"), 1, false, glm::value_ptr(V));
+
+	// Macierz główna
+	glm::mat4 M = glm::mat4(1.0f);
+
+	if (drinkCount >= 6) {
+		M = glm::rotate(M, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
+	}
+
+	//itemy tex
+	setupTextures(tex0, tex1, 1);
+
+	// Macierz modelu dla itema
+	glm::mat4 MItem = M;
+	MItem = glm::translate(MItem, glm::vec3(-2.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
+	MItem = glm::scale(MItem, glm::vec3(0.1f, 0.1f, 0.3f));
+	MItem = drink(MItem, angle_x, angle_y, 1, show);
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
+
+
+	if (show[1]) {
+		OBottle.draw(sp);
+	}
+
+
+	glm::mat4 MItem2 = M;
+	MItem2 = glm::translate(MItem2, glm::vec3(-1.0f, 0.0f, 0.0f));
+	MItem2 = glm::scale(MItem2, glm::vec3(0.1f, 0.1f, 0.1f));
+	MItem2 = drink(MItem2, angle_x, angle_y, 2, show);
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem2));
+
+	if (show[2]) {
 	OBottle.draw(sp);
+	}
+
+	glm::mat4 MItem3 = M;
+	MItem3 = glm::translate(MItem3, glm::vec3(0.0f, 0.0f, 0.0f));
+	MItem3 = glm::scale(MItem3, glm::vec3(0.1f, 0.1f, 0.1f));
+	MItem3 = drink(MItem3, angle_x, angle_y, 3, show);
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem3));
+
+	if (show[3]) {
+		OBottle.draw(sp);
+	}
+
+	glm::mat4 MItem4 = M;
+	MItem4 = glm::translate(MItem4, glm::vec3(1.0f, 0.0f, 0.0f));
+	MItem4 = glm::scale(MItem4, glm::vec3(0.1f, 0.1f, 0.1f));
+	MItem4 = drink(MItem4, angle_x, angle_y, 4, show);
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem4));
+
+	if (show[4]) {
+		OBottle.draw(sp);
+	}
+
+	glm::mat4 MItem5 = M;
+	MItem5 = glm::translate(MItem5, glm::vec3(2.0f, 0.0f, 0.0f));
+	MItem5 = glm::scale(MItem5, glm::vec3(0.1f, 0.1f, 0.1f));
+	MItem5 = drink(MItem5, angle_x, angle_y, 5, show);
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem5));
+
+	if (show[5]) {
+		OBottle.draw(sp);
+	}
+	glm::mat4 MItem6 = M;
+	MItem6 = glm::translate(MItem6, glm::vec3(3.0f, 0.0f, 0.0f));
+	MItem6 = glm::scale(MItem6, glm::vec3(0.1f, 0.1f, 0.1f));
+	MItem6 = drink(MItem6, angle_x, angle_y, 6, show);
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem6));
+
+	if (show[6]) {
+		OBottle.draw(sp);
+	}
+
+	//TEXTURY TABLe
+	setupTextures(tex3, tex1, 1);
+
+	glm::mat4 MTable = M;
+	MTable = glm::translate(MTable, glm::vec3(0.0f, -0.3f, 0.0f));
+	MTable = glm::scale(MTable, glm::vec3(0.6f, 0.1f, 0.1f));
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MTable));
+	
+	OFloor.draw(sp);
+
+	//podloga i sciany tex
+	setupTextures(tex2, tex1, 1);
+
 
     // Macierz modelu dla podlogi
     glm::mat4 MFloor = M;
@@ -271,7 +395,6 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
     glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MFloor));
 
     // Przesyłanie danych i rysowanie podlogi
-	setupTextures(tex2, tex3, 1);
 	OFloor.draw(sp);
 	
 	glm::mat4 MCeiling = M;
@@ -345,7 +468,7 @@ int main(void)
 		cameraPos += cameraMov_x + cameraMov_y; // Przesuwanie prawo/lewo oraz przód/tył przy wciskaniu WSAD
 		cameraPos.y = 0.0f;
         glfwSetTime(0); //Zeruj timer
-		drawScene(window,angle_x,angle_y); //Wykonaj procedurę rysującą
+		drawScene(window,angle_x,angle_y,glfwGetTime()); //Wykonaj procedurę rysującą
 		glfwPollEvents(); //Wykonaj procedury callback w zalezności od zdarzeń jakie zaszły.
 	}
 
