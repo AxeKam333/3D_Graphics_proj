@@ -1,22 +1,3 @@
-/*
-Niniejszy program jest wolnym oprogramowaniem; możesz go
-rozprowadzać dalej i / lub modyfikować na warunkach Powszechnej
-Licencji Publicznej GNU, wydanej przez Fundację Wolnego
-Oprogramowania - według wersji 2 tej Licencji lub(według twojego
-wyboru) którejś z późniejszych wersji.
-
-Niniejszy program rozpowszechniany jest z nadzieją, iż będzie on
-użyteczny - jednak BEZ JAKIEJKOLWIEK GWARANCJI, nawet domyślnej
-gwarancji PRZYDATNOŚCI HANDLOWEJ albo PRZYDATNOŚCI DO OKREŚLONYCH
-ZASTOSOWAŃ.W celu uzyskania bliższych informacji sięgnij do
-Powszechnej Licencji Publicznej GNU.
-
-Z pewnością wraz z niniejszym programem otrzymałeś też egzemplarz
-Powszechnej Licencji Publicznej GNU(GNU General Public License);
-jeśli nie - napisz do Free Software Foundation, Inc., 59 Temple
-Place, Fifth Floor, Boston, MA  02110 - 1301  USA
-*/
-
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_SWIZZLE
 
@@ -32,6 +13,8 @@ Place, Fifth Floor, Boston, MA  02110 - 1301  USA
 #include "shaderprogram.h"
 #include "myCube.h"
 #include "myTeapot.h"
+#include "objloader.hpp"
+#include "Object.h"
 
 float speed_x=0;
 float speed_y=0;
@@ -41,8 +24,8 @@ ShaderProgram *sp;
 
 
 //Odkomentuj, żeby rysować kostkę
-float* vertices = myCubeVertices;
-float* normals = myCubeNormals;
+float* vertices1 = myCubeVertices;
+float* normals1 = myCubeNormals;
 float* texCoords = myCubeTexCoords;
 float* colors = myCubeColors;
 int vertexCount = myCubeVertexCount;
@@ -54,6 +37,10 @@ float* normals2 = myTeapotVertexNormals;
 float* texCoords2 = myTeapotTexCoords;
 float* colors2 = myTeapotColors;
 int vertexCount2 = myTeapotVertexCount;
+
+static Object OBottle("models\\untitled.obj");
+static Object OFloor("floor.obj");
+static Object OTable("models\\stol.obj");
 
 GLuint tex0;
 GLuint tex1;
@@ -153,7 +140,7 @@ void windowResizeCallback(GLFWwindow* window,int width,int height) {
     glViewport(0,0,width,height);
 }
 
-GLuint readTexture(const char* filename) {
+GLuint readTexture(const char* filename, int glParametr = GL_LINEAR) {
     GLuint tex;
     glActiveTexture(GL_TEXTURE0);
 
@@ -170,9 +157,8 @@ GLuint readTexture(const char* filename) {
     glTexImage2D(GL_TEXTURE_2D, 0, 4, width, height, 0,
         GL_RGBA, GL_UNSIGNED_BYTE, (unsigned char*)image.data());
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     return tex;
 }
 
@@ -186,6 +172,8 @@ void initOpenGLProgram(GLFWwindow* window) {
 	glfwSetKeyCallback(window,keyCallback);
 
 	sp=new ShaderProgram("v_simplest.glsl",NULL,"f_simplest.glsl");
+
+	// bool res = loadOBJ("C:\\Users\\olekk\\OneDrive\\Pulpit\\programming studies\\g&v\\Projekt\\gkiw_st_11a_win\\models\\untitled.obj", vertices, uvs, normals);
 
 	tex0 = readTexture("metal.png");
 	tex1 = readTexture("sky.png");
@@ -217,14 +205,15 @@ void setupVertexAttribs(float * v, float * c, float * n, float * t) {
     glVertexAttribPointer(sp->a("texCoord0"), 2, GL_FLOAT, false, 0, t);
 }
 
-void setupTextures(GLuint t0, GLuint t1) {
+void setupTextures(GLuint t0, GLuint t1, int option = 0) {
     glUniform1i(sp->u("textureMap0"), 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, t0);
-
-    glUniform1i(sp->u("textureMap1"), 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, t1);
+	if(option == 0) {
+		glUniform1i(sp->u("textureMap1"), 1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, t1);
+	}
 }
 
 void disableVertexAttribs() {
@@ -248,42 +237,64 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y) {
     // Macierz główna
     glm::mat4 M = glm::mat4(1.0f);
 
-
-
 	// Macierz modelu dla itema
     glm::mat4 MItem = M;
     MItem = glm::translate(MItem, glm::vec3(-2.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
     MItem = glm::rotate(MItem, angle_y, glm::vec3(1.0f, 0.0f, 0.0f));
     MItem = glm::rotate(MItem, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
+    MItem = glm::scale(MItem, glm::vec3(0.1f, 0.1f, 0.3f));
     glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
 
     // Przesyłanie danych i rysowanie itema
 
-	setupVertexAttribs(vertices2, colors2, normals2, texCoords2);
-	setupTextures(tex0, tex1);
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount2);
+	OBottle.draw(sp);
+
+	glm::mat4 MTable = M;
+	MTable = glm::translate(MTable, glm::vec3(0.0f, 0.0f, 0.0f));
+	MTable = glm::scale(MTable, glm::vec3(0.3f, 0.3f, 0.3f));
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MTable));
+	OTable.draw(sp);
+
+	
+	glm::mat4 MItem2 = M;
+    MItem2 = glm::translate(MItem2, glm::vec3(-1.0f, 0.0f, 0.0f));
+    MItem2 = glm::scale(MItem2, glm::vec3(0.1f, 0.1f, 0.1f));
+    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem2));
+
+	OBottle.draw(sp);
 
     // Macierz modelu dla podlogi
     glm::mat4 MFloor = M;
     MFloor=glm::translate(MFloor, glm::vec3(0, -2, 0));
-	MFloor=glm::scale(MFloor, glm::vec3(10, 0.5, 10));
+	// MFloor=glm::scale(MFloor, glm::vec3(10, 0.5, 10));
 
     glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MFloor));
 
     // Przesyłanie danych i rysowanie podlogi
-	setupVertexAttribs(vertices, colors, normals, texCoords);
-	setupTextures(tex2, tex3);
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+	setupTextures(tex2, tex3, 1);
+	OFloor.draw(sp);
 	
 	glm::mat4 MCeiling = M;
     MCeiling=glm::translate(MCeiling, glm::vec3(0, 6, 0));
-	MCeiling=glm::scale(MCeiling, glm::vec3(10, 0.5, 10));
+	// MCeiling=glm::scale(MCeiling, glm::vec3(10, 0.5, 10));
 
     glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MCeiling));
 
     // Przesyłanie danych i rysowanie podlogi
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
+	// glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 
+	OFloor.draw(sp);
+
+	for(int i=0; i<4; i++) {
+		glm::mat4 MWall = M;
+		MWall=glm::rotate(MWall, PI/2, glm::vec3(0, 0, 1));
+		MWall=glm::rotate(MWall, i*PI/2, glm::vec3(1, 0, 0));
+		MWall=glm::translate(MWall, glm::vec3(0, 8, 0));
+
+		glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MWall));
+
+		OFloor.draw(sp);
+	}
     disableVertexAttribs();
 
     glfwSwapBuffers(window);
@@ -329,7 +340,7 @@ int main(void)
 	glfwSetTime(0); //Zeruj timer
 	while (!glfwWindowShouldClose(window) && !XButtonPressed) //Tak długo jak okno nie powinno zostać zamknięte
 	{
-        angle_x+=speed_x*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
+        angle_x+=(PI/2)*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
         angle_y+=speed_y*glfwGetTime(); //Zwiększ/zmniejsz kąt obrotu na podstawie prędkości i czasu jaki upłynał od poprzedniej klatki
 		cameraPos += cameraMov_x + cameraMov_y; // Przesuwanie prawo/lewo oraz przód/tył przy wciskaniu WSAD
 		cameraPos.y = 0.0f;

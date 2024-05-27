@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="lodepng.h" />
+    <ClInclude Include="Object.h" />
+    <ClInclude Include="objloader.hpp" />
     <ClInclude Include="shaderprogram.h" />
     <ClInclude Include="myCube.h" />
     <ClInclude Include="myTeapot.h" />
@@ -28,6 +30,8 @@
   <ItemGroup>
     <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="main_file.cpp" />
+    <ClCompile Include="Object.cpp" />
+    <ClCompile Include="objloader.cpp" />
     <ClCompile Include="shaderprogram.cpp" />
   </ItemGroup>
   <ItemGroup>

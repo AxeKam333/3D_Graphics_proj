@@ -24,10 +24,16 @@
     <ClInclude Include="shaderprogram.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
-	<ClInclude Include="myCube.h">
+    <ClInclude Include="myCube.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
-	<ClInclude Include="myTeapot.h">
+    <ClInclude Include="myTeapot.h">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="objloader.hpp">
+      <Filter>Pliki nagłówkowe</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
       <Filter>Pliki nagłówkowe</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,10 +41,16 @@
     <ClCompile Include="lodepng.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
-    <ClCompile Include="main_file.cpp">
+    <ClCompile Include="shaderprogram.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
-    <ClCompile Include="shaderprogram.cpp">
+    <ClCompile Include="objloader.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
+      <Filter>Pliki źródłowe</Filter>
+    </ClCompile>
+    <ClCompile Include="main_file.cpp">
       <Filter>Pliki źródłowe</Filter>
     </ClCompile>
   </ItemGroup>
@@ -46,7 +58,7 @@
     <None Include="f_simplest.glsl">
       <Filter>Pliki zasobów</Filter>
     </None>
-	<None Include="v_simplest.glsl">
+    <None Include="v_simplest.glsl">
       <Filter>Pliki zasobów</Filter>
     </None>
   </ItemGroup>
