@@ -43,7 +43,6 @@ int vertexCount2 = myTeapotVertexCount;
 
 static Object OBottle("models\\untitled.obj");
 static Object OFloor("floor.obj");
-//static Object OTable("models\\stol.obj");
 
 GLuint tex0;
 GLuint tex1;
@@ -109,6 +108,9 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
 		}
 		if (key == GLFW_KEY_7 && drinking == 0) {
 			drinking = 7;
+		}
+		if (key == GLFW_KEY_8 && drinking == 0) {
+			drinking = 8;
 		}
     }
     if (action==GLFW_RELEASE) {
@@ -274,6 +276,7 @@ glm::mat4 drink(glm::mat4 M,float angle_x, float angle_y,int drink_ID, bool show
 		//printf("%d\n", drink_angle);
 		M = glm::translate(M, glm::vec3(0.0f, drink_angle / 5, 0.0f));
 		M = glm::rotate(M, drink_angle, glm::vec3(1.0f, 0.0f, 0.0f));
+		M = glm::rotate(M, PI/2, glm::vec3(0.0f, -1.0f, 0.0f));
 	}
 	return M;
 }
@@ -350,6 +353,9 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 
 	//podloga i sciany tex
 	setupTextures(tex2, tex1, 1);
+	if (drinkCount >= 6) {
+		setupTextures(tex5, tex1, 1);
+	}
 
 
     // Macierz modelu dla podlogi
@@ -385,17 +391,20 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 	}
 
 	glm::mat4 MTeapod = M;
-    MTeapod = glm::translate(MTeapod, glm::vec3(-3.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
-    MTeapod = glm::rotate(MTeapod, angle_y, glm::vec3(1.0f, 0.0f, 0.0f));
-    MTeapod = glm::rotate(MTeapod, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
+    MTeapod = glm::translate(MTeapod, glm::vec3(-3.0f, 0.0f, 0.0f)); 
 	MTeapod = glm::scale(MTeapod, glm::vec3(0.5f,0.5f,0.5f));
+	MTeapod = drink(MTeapod, angle_x, angle_y, 8, show);
     glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MTeapod));
 
     // Przesyłanie danych i rysowanie itema
 
-	setupVertexAttribs(vertices2, colors2, normals2, texCoords2);
-	setupTextures(tex0, tex1);
-    glDrawArrays(GL_TRIANGLES, 0, vertexCount2);
+	if (show[8]) {
+		setupVertexAttribs(vertices2, colors2, normals2, texCoords2);
+		setupTextures(tex0, tex1);
+		glDrawArrays(GL_TRIANGLES, 0, vertexCount2);
+	}
+
+	
 
 	//WINE
 	setupTextures(tex5, tex1);
@@ -403,7 +412,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 	glm::mat4 MItem7 = M;
 	MItem7 = glm::translate(MItem7, glm::vec3(-4.0f, 0.0f, 0.0f));
 	MItem7 = glm::scale(MItem7, glm::vec3(0.1f, 0.2f, 0.1f));
-	MItem7 = drink(MItem7, angle_x, angle_y, 6, show);
+	MItem7 = drink(MItem7, angle_x, angle_y, 7, show);
 	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem7));
 
 	if (show[7]) {
