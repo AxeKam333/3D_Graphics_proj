@@ -207,7 +207,7 @@ void initOpenGLProgram(GLFWwindow* window) {
 	tex2 = readTexture("wood1.png");
 	tex3 = readTexture("marmur.png");
 	tex4 = readTexture("metal.png");
-	tex5 = readTexture("wine_tex.png");
+	tex5 = readTexture("wine_color.png");
 }
 
 
@@ -314,7 +314,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 
 	// Macierz modelu dla itema
 	glm::mat4 MItem = M;
-	MItem = glm::translate(MItem, glm::vec3(-2.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
+	MItem = glm::translate(MItem, glm::vec3(-1.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
 	MItem = drink(MItem, angle_x, angle_y, 1, show);
 	MItem = glm::scale(MItem, glm::vec3(0.1f, 0.05f, 0.2f));
 	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
@@ -325,54 +325,18 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 	}
 	setupTextures(tex0, tex1, 1);
 
-	glm::mat4 MItem2 = M;
-	MItem2 = glm::translate(MItem2, glm::vec3(-1.0f, 0.0f, 0.0f));
-	MItem2 = glm::scale(MItem2, glm::vec3(0.1f, 0.1f, 0.1f));
-	MItem2 = drink(MItem2, angle_x, angle_y, 2, show);
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem2));
+	for (int i = 2; i <= 6; ++i) {
+    glm::mat4 MItem = M;
+    MItem = glm::translate(MItem, glm::vec3((i - 2) * 0.7f, 0.0f, 0.0f)); // Przesunięcie obiektu
+    MItem = glm::scale(MItem, glm::vec3(0.1f, 0.1f, 0.1f)); // Skalowanie obiektu
+    MItem = drink(MItem, angle_x, angle_y, i, show); // Aplikowanie funkcji `drink`
 
-	if (show[2]) {
-	OBottle.draw(sp);
-	}
+    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem)); // Przekazanie macierzy modelu do shadera
 
-	glm::mat4 MItem3 = M;
-	MItem3 = glm::translate(MItem3, glm::vec3(0.0f, 0.0f, 0.0f));
-	MItem3 = glm::scale(MItem3, glm::vec3(0.1f, 0.1f, 0.1f));
-	MItem3 = drink(MItem3, angle_x, angle_y, 3, show);
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem3));
-
-	if (show[3]) {
-		OBottle.draw(sp);
-	}
-
-	glm::mat4 MItem4 = M;
-	MItem4 = glm::translate(MItem4, glm::vec3(1.0f, 0.0f, 0.0f));
-	MItem4 = glm::scale(MItem4, glm::vec3(0.1f, 0.1f, 0.1f));
-	MItem4 = drink(MItem4, angle_x, angle_y, 4, show);
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem4));
-
-	if (show[4]) {
-		OBottle.draw(sp);
-	}
-
-	glm::mat4 MItem5 = M;
-	MItem5 = glm::translate(MItem5, glm::vec3(2.0f, 0.0f, 0.0f));
-	MItem5 = glm::scale(MItem5, glm::vec3(0.1f, 0.1f, 0.1f));
-	MItem5 = drink(MItem5, angle_x, angle_y, 5, show);
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem5));
-
-	if (show[5]) {
-		OBottle.draw(sp);
-	}
-	glm::mat4 MItem6 = M;
-	MItem6 = glm::translate(MItem6, glm::vec3(3.0f, 0.0f, 0.0f));
-	MItem6 = glm::scale(MItem6, glm::vec3(0.1f, 0.1f, 0.1f));
-	MItem6 = drink(MItem6, angle_x, angle_y, 6, show);
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem6));
-
-	if (show[6]) {
-		OBottle.draw(sp);
-	}
+    if (show[i]) {
+        OBottle.draw(sp); // Rysowanie obiektu
+    }
+}
 
 	//TEXTURY TABLe
 	setupTextures(tex3, tex1, 1);
