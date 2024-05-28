@@ -25,8 +25,8 @@ void main(void) {
 	vec4 mr2 = reflect(-ml2, mn);
 
 	//Parametry powierzchni
-	vec4 kd = mix(texture(textureMap0, iTexCoord0), texture(textureMap1, iTexCoord1),0.3);
-	vec4 ks = vec4(1, 1, 1, 1);
+	vec4 kd = mix(texture(textureMap0, iTexCoord0), texture(textureMap1, iTexCoord1), 0.1); // Zmniejszony wpływ drugiej tekstury
+	vec4 ks = vec4(0.2, 0.2, 0.2, 1); // Zmniejszona intensywność specular
 
 	//Obliczenie modelu oświetlenia
     float nl1 = clamp(dot(mn, ml1), 0, 1);
