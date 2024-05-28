@@ -49,6 +49,8 @@ GLuint tex0;
 GLuint tex1;
 GLuint tex2;
 GLuint tex3;
+GLuint tex4;
+GLuint tex5;
 
 // --- Obsługa kamery
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.5f);
@@ -204,6 +206,8 @@ void initOpenGLProgram(GLFWwindow* window) {
 	tex1 = readTexture("sky.png");
 	tex2 = readTexture("wood1.png");
 	tex3 = readTexture("marmur.png");
+	tex4 = readTexture("metal.png");
+	tex5 = readTexture("wine_tex.png");
 }
 
 
@@ -213,7 +217,7 @@ void freeOpenGLProgram(GLFWwindow* window) {
 
     delete sp;
 
-	glDeleteTextures(3, &tex0);
+	glDeleteTextures(5, &tex0);
 }
 
 void setupVertexAttribs(float * v, float * c, float * n, float * t) {
@@ -256,9 +260,6 @@ glm::mat4 drink(glm::mat4 M,float angle_x, float angle_y,int drink_ID, bool show
 		M = glm::rotate(M, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
 		
 	}
-
-
-	// Przesyłanie danych i rysowanie itema
 	else {
 		static float drink_time[10] = {0.0f,0.0f ,0.0f,0.0f , 0.0f,0.0f ,0.0f,0.0f , 0.0f,0.0f };
 		const float max_drink_time = 2.5;
@@ -309,20 +310,20 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 	}
 
 	//itemy tex
-	setupTextures(tex0, tex1, 1);
+	setupTextures(tex4, tex1, 1);
 
 	// Macierz modelu dla itema
 	glm::mat4 MItem = M;
 	MItem = glm::translate(MItem, glm::vec3(-2.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
-	MItem = glm::scale(MItem, glm::vec3(0.1f, 0.1f, 0.3f));
 	MItem = drink(MItem, angle_x, angle_y, 1, show);
+	MItem = glm::scale(MItem, glm::vec3(0.1f, 0.05f, 0.2f));
 	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
 
 
 	if (show[1]) {
 		OBottle.draw(sp);
 	}
-
+	setupTextures(tex0, tex1, 1);
 
 	glm::mat4 MItem2 = M;
 	MItem2 = glm::translate(MItem2, glm::vec3(-1.0f, 0.0f, 0.0f));
@@ -418,6 +419,33 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 
 		OFloor.draw(sp);
 	}
+
+	glm::mat4 MTeapod = M;
+    MTeapod = glm::translate(MTeapod, glm::vec3(-3.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
+    MTeapod = glm::rotate(MTeapod, angle_y, glm::vec3(1.0f, 0.0f, 0.0f));
+    MTeapod = glm::rotate(MTeapod, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
+	MTeapod = glm::scale(MTeapod, glm::vec3(0.5f,0.5f,0.5f));
+    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MTeapod));
+
+    // Przesyłanie danych i rysowanie itema
+
+	setupVertexAttribs(vertices2, colors2, normals2, texCoords2);
+	setupTextures(tex0, tex1);
+    glDrawArrays(GL_TRIANGLES, 0, vertexCount2);
+
+	//WINE
+	setupTextures(tex5, tex1);
+
+	glm::mat4 MItem7 = M;
+	MItem7 = glm::translate(MItem7, glm::vec3(-4.0f, 0.0f, 0.0f));
+	MItem7 = glm::scale(MItem7, glm::vec3(0.1f, 0.2f, 0.1f));
+	MItem7 = drink(MItem7, angle_x, angle_y, 6, show);
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem7));
+
+	if (show[7]) {
+		OBottle.draw(sp);
+	}
+
     disableVertexAttribs();
 
     glfwSwapBuffers(window);
