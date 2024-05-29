@@ -50,6 +50,10 @@ GLuint tex2;
 GLuint tex3;
 GLuint tex4;
 GLuint tex5;
+GLuint tex6;
+
+float light_one = 1, light_two = 1;
+
 
 // --- Obsługa kamery
 glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.5f);
@@ -112,6 +116,8 @@ void keyCallback(GLFWwindow* window,int key,int scancode,int action,int mods) {
 		if (key == GLFW_KEY_8 && drinking == 0) {
 			drinking = 8;
 		}
+		if (key == GLFW_KEY_COMMA) light_one = (light_one-1)*-1;
+		if (key == GLFW_KEY_PERIOD) light_two = (light_two - 1) * -1;
     }
     if (action==GLFW_RELEASE) {
         if (key==GLFW_KEY_LEFT) speed_x=0;
@@ -210,6 +216,7 @@ void initOpenGLProgram(GLFWwindow* window) {
 	tex3 = readTexture("marmur.png");
 	tex4 = readTexture("metal.png");
 	tex5 = readTexture("wine_color.png");
+	tex6 = readTexture("czajnik.png");
 }
 
 
@@ -245,6 +252,7 @@ void setupTextures(GLuint t0, GLuint t1, int option = 0) {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, t1);
 	}
+	
 }
 
 void disableVertexAttribs() {
@@ -274,7 +282,7 @@ glm::mat4 drink(glm::mat4 M,float angle_x, float angle_y,int drink_ID, bool show
 		}
 		float drink_angle = fmin(drink_time[drink_ID], max_drink_time);
 		//printf("%d\n", drink_angle);
-		M = glm::translate(M, glm::vec3(0.0f, drink_angle / 5, 0.0f));
+		M = glm::translate(M, glm::vec3(0.0f, drink_angle / 3, 0.0f));
 		M = glm::rotate(M, drink_angle, glm::vec3(1.0f, 0.0f, 0.0f));
 		M = glm::rotate(M, PI/2, glm::vec3(0.0f, -1.0f, 0.0f));
 	}
@@ -302,6 +310,7 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 	glm::mat4 P = glm::perspective(50.0f * PI / 180.0f, aspectRatio, 0.01f, 50.0f);
 
 	sp->use();
+	glUniform2f(sp->u("lights"), light_one, light_two);
 	glUniformMatrix4fv(sp->u("P"), 1, false, glm::value_ptr(P));
 	glUniformMatrix4fv(sp->u("V"), 1, false, glm::value_ptr(V));
 
@@ -312,37 +321,9 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 		M = glm::rotate(M, angle_x, glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
-	//itemy tex
-	setupTextures(tex4, tex1, 1);
-
-	// Macierz modelu dla itema
-	glm::mat4 MItem = M;
-	MItem = glm::translate(MItem, glm::vec3(-1.0f, 0.0f, 0.0f)); // Przesuń pierwszy obiekt
-	MItem = drink(MItem, angle_x, angle_y, 1, show);
-	MItem = glm::scale(MItem, glm::vec3(0.1f, 0.05f, 0.2f));
-	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
-
-
-	if (show[1]) {
-		OBottle.draw(sp);
-	}
-	setupTextures(tex0, tex1, 1);
-
-	for (int i = 2; i <= 6; ++i) {
-    glm::mat4 MItem = M;
-    MItem = glm::translate(MItem, glm::vec3((i - 2) * 0.7f, 0.0f, 0.0f)); // Przesunięcie obiektu
-    MItem = glm::scale(MItem, glm::vec3(0.1f, 0.1f, 0.1f)); // Skalowanie obiektu
-    MItem = drink(MItem, angle_x, angle_y, i, show); // Aplikowanie funkcji `drink`
-
-    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem)); // Przekazanie macierzy modelu do shadera
-
-    if (show[i]) {
-        OBottle.draw(sp); // Rysowanie obiektu
-    }
-}
-
 	//TEXTURY TABLe
 	setupTextures(tex3, tex1, 1);
+
 
 	glm::mat4 MTable = M;
 	MTable = glm::translate(MTable, glm::vec3(0.0f, -0.3f, 0.0f));
@@ -389,6 +370,36 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 
 		OFloor.draw(sp);
 	}
+	//tex piersiowa
+	setupTextures(tex4, tex1, 1);
+
+	// Macierz modelu dla piersiowa
+	glm::mat4 MItem = M;
+	MItem = glm::translate(MItem, glm::vec3(-1.0f, -0.06f, 0.0f)); // Przesuń pierwszy obiekt
+	MItem = drink(MItem, angle_x, angle_y, 1, show);
+	MItem = glm::scale(MItem, glm::vec3(0.1f, 0.05f, 0.2f));
+	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem));
+
+
+	if (show[1]) {
+		OBottle.draw(sp);
+	}
+
+	//itemy tex
+	setupTextures(tex0, tex1, 1);
+
+	for (int i = 2; i <= 6; ++i) {
+    glm::mat4 MItem = M;
+    MItem = glm::translate(MItem, glm::vec3((i - 2) * 0.7f, 0.07f, 0.0f)); // Przesunięcie obiektu
+    MItem = glm::scale(MItem, glm::vec3(0.1f, 0.1f, 0.1f)); // Skalowanie obiektu
+    MItem = drink(MItem, angle_x, angle_y, i, show); // Aplikowanie funkcji `drink`
+
+    glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem)); // Przekazanie macierzy modelu do shadera
+
+		if (show[i]) {
+			OBottle.draw(sp); // Rysowanie obiektu
+		}
+	}
 
 	glm::mat4 MTeapod = M;
     MTeapod = glm::translate(MTeapod, glm::vec3(-3.0f, 0.0f, 0.0f)); 
@@ -400,17 +411,16 @@ void drawScene(GLFWwindow* window, float angle_x, float angle_y, float time) {
 
 	if (show[8]) {
 		setupVertexAttribs(vertices2, colors2, normals2, texCoords2);
-		setupTextures(tex0, tex1);
+		setupTextures(tex6, tex1);
 		glDrawArrays(GL_TRIANGLES, 0, vertexCount2);
 	}
 
 	
-
 	//WINE
 	setupTextures(tex5, tex1);
 
 	glm::mat4 MItem7 = M;
-	MItem7 = glm::translate(MItem7, glm::vec3(-4.0f, 0.0f, 0.0f));
+	MItem7 = glm::translate(MItem7, glm::vec3(-4.0f, 0.3f, 0.0f));
 	MItem7 = glm::scale(MItem7, glm::vec3(0.1f, 0.2f, 0.1f));
 	MItem7 = drink(MItem7, angle_x, angle_y, 7, show);
 	glUniformMatrix4fv(sp->u("M"), 1, false, glm::value_ptr(MItem7));
